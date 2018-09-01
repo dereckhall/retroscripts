@@ -5,7 +5,7 @@
 # restart emulationstation and you now see it as an option when opening the retropie menu
 #
 # it expects the usb drive to have the following folder/file layout
-# usbdrove: roms-folder:-> nes,snes,megadrive,etc with rom files contained within those directories.
+# usbdrive: roms-folder:-> nes,snes,megadrive,etc with rom files contained within those directories.
 # format usb as fat32, and create your layout like i mentioned above, insert usb drive, and navigate/click on RomCopy.
 # i hope this helps someone.
 # by outz/dereck
