@@ -102,7 +102,7 @@ EOF
                         echo "66" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
                         cd /opt/retropie/configs/all/emulationstation/
                         /bin/tar cfz "$rcbkup"/gamelists.tar.gz ./gamelists
-            echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup to USB complete" 10 80 0
+            echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup of roms to USB complete" 10 80 0
                         umountfunc
                         ;;
                 3)
@@ -124,7 +124,7 @@ EOF
                         echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/etc/NetworkManager\n\n...Please wait" 10 80 0
                         cd /etc/
                         /bin/tar cfz "$rcbkup"/networkmanager.tar.gz ./NetworkManager
-                        echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup to USB complete" 10 80 0
+                        echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup of WiFi to USB complete" 10 80 0
                         umountfunc
                         ;;
                 3)
