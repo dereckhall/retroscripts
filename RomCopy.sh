@@ -99,7 +99,7 @@ EOF
 			/bin/tar cfz "$rcbkup"/downloaded_images.tar.gz ./downloaded_images
 			echo "66" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
 			cd /opt/retropie/configs/all/emulationstation/
-			/bin/tar cfz "$rcbkup"/gamelists.tar.gz --exclude='retropie' ./gamelists
+			/bin/tar cfz "$rcbkup"/gamelists.tar.gz ./gamelists
             echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup to USB complete" 10 80 0
 			umountfunc
             ;;
