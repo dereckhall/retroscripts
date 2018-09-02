@@ -16,31 +16,31 @@
 # RetrOrange releases.
 
 mountfunc() {
-	/usr/bin/sudo /bin/umount /media > /dev/null 2>&1
+        /usr/bin/sudo /bin/umount /media > /dev/null 2>&1
 
-	MOUNT=$(/usr/bin/sudo /bin/mount /dev/sda1 /media -o uid=pi,gid=pi> /dev/null 2>&1)
-	MOUNTEC=$?
+        MOUNT=$(/usr/bin/sudo /bin/mount /dev/sda1 /media -o uid=pi,gid=pi> /dev/null 2>&1)
+        MOUNTEC=$?
 
-	if [ $MOUNTEC -eq 0 ]; then
-		dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Successfully mounted the USB drive \n\n...Please wait" 5 40
-		sleep 4
-	else
-		dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Unable to mount USB drive \n\n...Exiting" 5 40
-		sleep 4
-		exit 1
-	fi
+        if [ $MOUNTEC -eq 0 ]; then
+                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Successfully mounted the USB drive \n\n...Please wait" 5 40
+                sleep 4
+        else
+                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Unable to mount USB drive \n\n...Exiting" 5 40
+                sleep 4
+                exit 1
+        fi
 }
 
 umountfunc() {
-	UMOUNT=$(/usr/bin/sudo /bin/umount /media > /dev/null 2>&1)
-	UMOUNTEC=$?
+        UMOUNT=$(/usr/bin/sudo /bin/umount /media > /dev/null 2>&1)
+        UMOUNTEC=$?
 
-	if [ $UMOUNTEC -eq 0 ]; then
-    	exit 0
-	else
-    	dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Unable to unmount USB drive \n\n...Exiting" 5 40
-    	sleep 4
-	fi
+        if [ $UMOUNTEC -eq 0 ]; then
+                exit 0
+        else
+                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Unable to unmount USB drive \n\n...Exiting" 5 40
+                sleep 4
+        fi
 }
 
 rcbkup="/media/rcbackup"
@@ -49,28 +49,30 @@ rcmcmd=(dialog --keep-tite --no-shadow --cr-wrap --keep-window --menu "RomCopy M
 
 rcmoptions=(
 1 "Copy roms from USB to internal"
-2 "Backup current roms, data to USB"
-3 "Restore previous backup from USB"
-4 "Exit"
+2 "Backup current roms to USB"
+3 "Restore rom backup from USB"
+4 "Backup WiFi settings to USB"
+5 "Restore WiFi backup from USB"
+255 "Exit"
 )
 
 rcmchoices=$("${rcmcmd[@]}" "${rcmoptions[@]}" 2>&1 >/dev/tty)
 
 for rcmchoice in $rcmchoices
 do
-    case $rcmchoice in
-        1)
-			mountfunc
-			ARRSRC=(/media/roms/*/*)
-			DST="/home/pi/RetroPie/roms/"
-			dialog --keep-tite --no-shadow --cr-wrap --title "Copy files" --gauge "Copying files..." 15 80 < <(
-				n=${#ARRSRC[*]};
-				i=0
+        case $rcmchoice in
+                1)
+                        mountfunc
+                        ARRSRC=(/media/roms/*/*)
+                        DST="/home/pi/RetroPie/roms/"
+                        dialog --keep-tite --no-shadow --cr-wrap --title "Copy files" --gauge "Copying files..." 15 80 < <(
+                                n=${#ARRSRC[*]};
+                                i=0
 
-				for fsrc in "${ARRSRC[@]}"
-				do
-					fdst=$(echo $fsrc | sed s+media+home/pi/RetroPie+)
-					PCT=$(( 100*(++i)/n ))
+                                for fsrc in "${ARRSRC[@]}"
+                                do
+                                        fdst=$(echo $fsrc | sed s+media+home/pi/RetroPie+)
+                                        PCT=$(( 100*(++i)/n ))
 cat <<EOF
 XXX
 $PCT
@@ -79,41 +81,68 @@ Copying file \
 \n\nDST: "$fdst"
 XXX
 EOF
-					/bin/cp "$fsrc" "$fdst" &>/dev/null
-				done
-			)
+                                        /bin/cp "$fsrc" "$fdst" &>/dev/null
+                                done
+                        )
 
-			/bin/chown -R pi.pi $DST
-			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Copy complete.\n\n...Please wait" 5 40
-			umountfunc
-            ;;
-        2)
-			mountfunc
-			/bin/mkdir "$rcbkup" > /dev/null 2>&1
-			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backing up data to USB\n\n...Please wait" 10 80
-			echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
-			cd /home/pi/RetroPie/
-			/bin/tar cfz "$rcbkup"/roms.tar.gz ./roms
-			echo "33" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
-			cd /opt/retropie/configs/all/emulationstation/
-			/bin/tar cfz "$rcbkup"/downloaded_images.tar.gz ./downloaded_images
-			echo "66" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
-			cd /opt/retropie/configs/all/emulationstation/
-			/bin/tar cfz "$rcbkup"/gamelists.tar.gz ./gamelists
+                        /bin/chown -R pi.pi $DST
+                        dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Copy complete.\n\n...Please wait" 5 40
+                        umountfunc
+                        ;;
+                2)
+                        mountfunc
+                        /bin/mkdir "$rcbkup" > /dev/null 2>&1
+                        dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backing up data to USB\n\n...Please wait" 10 80
+                        echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
+                        cd /home/pi/RetroPie/
+                        /bin/tar cfz "$rcbkup"/roms.tar.gz ./roms
+                        echo "33" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
+                        cd /opt/retropie/configs/all/emulationstation/
+                        /bin/tar cfz "$rcbkup"/downloaded_images.tar.gz ./downloaded_images
+                        echo "66" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
+                        cd /opt/retropie/configs/all/emulationstation/
+                        /bin/tar cfz "$rcbkup"/gamelists.tar.gz ./gamelists
             echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup to USB complete" 10 80 0
-			umountfunc
-            ;;
-        3)
-            echo "Third Option"
-			mountfunc
-			(pv -n "$rcbkup"/roms.tar.gz | tar xzf - -C /home/pi/RetroPie/ ) 2>&1 | dialog --gauge "Restore in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
-            (pv -n "$rcbkup"/downloaded_images.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
-            (pv -n "$rcbkup"/gamelists.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
-			umountfunc
-            ;;
-        4)
-            echo "...Exiting"
-			exit 0
-            ;;
-    esac
+                        umountfunc
+                        ;;
+                3)
+                        mountfunc
+                        if [ -f "$rcbkup"/roms.tar.gz ] && [ -f "$rcbkup"/downloaded_images.tar.gz ] && [ -f "$rcbkup"/gamelists.tar.gz ]; then
+                                rm -fr /home/pi/RetroPie/roms/*
+                                (pv -n "$rcbkup"/roms.tar.gz | tar xzf - -C /home/pi/RetroPie/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
+                                (pv -n "$rcbkup"/downloaded_images.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
+                                (pv -n "$rcbkup"/gamelists.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
+                                umountfunc
+                        else
+                                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backup rom data does not exist on USB drive\n\n...Exiting" 10 80
+                        fi
+                        ;;
+                4)
+                        mountfunc
+                        /bin/mkdir "$rcbkup" > /dev/null 2>&1
+                        dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backing up WiFi settings to USB\n\n...Please wait" 10 80
+                        echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/etc/NetworkManager\n\n...Please wait" 10 80 0
+                        cd /etc/
+                        /bin/tar cfz "$rcbkup"/networkmanager.tar.gz ./NetworkManager
+                        echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup to USB complete" 10 80 0
+                        umountfunc
+                        ;;
+                3)
+                        mountfunc
+                        if [ -f "$rcbkup"/networkmanager.tar.gz ]; then
+                                (pv -n "$rcbkup"/networkmanager.tar.gz | tar xzf - -C /etc/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/etc/NetworkManager\n\n...Please wait" 10 80 0
+                                /bin/cp /etc/rc.local /etc/rc.local.orig
+                                sed -i '/exit 0/d' /etc/rc.local > /dev/null 2>&1
+                                echo "ifdown eth0" >> /etc/rc.local
+                                echo "exit 0" >> /etc/rc.local
+                                umountfunc
+                        else
+                                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backup WiFi data does not exist on USB drive\n\n...Exiting" 10 80
+                        fi
+                        ;;
+                255)
+                        echo "...Exiting"
+                        exit 0
+                        ;;
+        esac
 done
