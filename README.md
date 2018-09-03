@@ -1,3 +1,4 @@
 # retroscripts
 
-https://www.youtube.com/watch?v=_zsy0ElTJxE
+
+https://i.outz.com/0b747bc4ac73cfc4c87a.gif
