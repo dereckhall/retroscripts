@@ -185,7 +185,7 @@ EOF
 			;;
 		254)
 			echo "...Rebooting"
-			/usr/bin/sudo /bin/reboot
+			/usr/bin/sudo /sbin/reboot
 			;;
 		255)
 			echo "...Exiting"
