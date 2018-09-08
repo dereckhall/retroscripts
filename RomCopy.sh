@@ -17,7 +17,7 @@
 # outz/dereck
 
 # 2018.09.08
-# added functionality to auto create folders on the usb drive for all emulators that show up within th retropie folder
+# added functionality to auto create folders on the usb drive for all emulators that show up within the retropie folder
 # outz/dereck
 
 mainfunc() {
