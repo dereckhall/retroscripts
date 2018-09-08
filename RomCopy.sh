@@ -8,12 +8,17 @@
 # usbdrive: roms-folder:-> nes,snes,megadrive,etc with rom files contained within those directories.
 # format usb as fat32, and create your layout like i mentioned above, insert usb drive, and navigate/click on RomCopy.
 # i hope this helps someone.
-# by outz/dereck
+# outz/dereck
 
 # 2018.09.01
-# added the ability to backup current roms, scraped coverart, gamelist data, wifi settings to USB, as well as the ability to
+# added the ability to backup current roms, bios scraped coverart, gamelist data to USB, as well as the ability to
 # restore those backups all from the RomCopy menu system. This should alleviate some of the pain when installing new
 # RetrOrange releases.
+# outz/dereck
+
+# 2018.09.08
+# added functionality to auto create folders on the usb drive for all emulators that show up within th retropie folder
+# outz/dereck
 
 mainfunc() {
 	menufunc
@@ -56,11 +61,11 @@ menufunc() {
 	rcmcmd=(dialog --keep-tite --no-shadow --cr-wrap --keep-window --menu "RomCopy Menu System (Insert USB Drive Now)" 22 101 16)
 
 	rcmoptions=(
-	1 "Copy new roms USB to internal"
-	2 "Backup current roms to USB"
-	3 "Restore rom backup from USB"
-	4 "Backup WiFi settings to USB"
-	5 "Restore WiFi backup from USB"
+	1 "Create rom folders on USB"
+	2 "Copy roms from USB to internal"
+	3 "Backup current roms to USB"
+	4 "Restore rom backup from USB"
+	253 "Help"
 	254 "Reboot"
 	255 "Exit"
 	)
@@ -70,51 +75,102 @@ menufunc() {
 for rcmchoice in $rcmchoices
 do
 	case $rcmchoice in
-		1)
-			mountfunc
-			/bin/mkdir /media/roms
-			ARRSRC=(/media/roms/*/*)
-			DST="/home/pi/RetroPie/roms/"
-			dialog --keep-tite --no-shadow --cr-wrap --title "Copy files" --gauge "Copying files..." 15 80 < <(
-				n=${#ARRSRC[*]};
-				i=0
-
-				for fsrc in "${ARRSRC[@]}"
-				do
-					fdst=$(echo $fsrc | sed s+media+home/pi/RetroPie+)
-					PCT=$(( 100*(++i)/n ))
-cat <<EOF
-XXX
-$PCT
-Copying file \
-\n\nSRC: "$fsrc" \
-\n\nDST: "$fdst"
-XXX
-EOF
-					/bin/cp "$fsrc" "$fdst" &>/dev/null
-				done
-			)
-
-			/bin/chown -R pi.pi $DST
-			umountfunc
-			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Rom copy complete.\n\n...Please wait" 5 40
+                1)
+                        mountfunc
+			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Creating rom folder structure\n\n...Please wait" 5 40
 			sleep 4
+			ARRROMDIR=($(/bin/ls -1 /home/pi/RetroPie/roms))
+			/bin/mkdir -p /media/retropie/roms &>/dev/null
+			/bin/mkdir /media/retropie/BIOS &>/dev/null
+			for romdir in "${ARRROMDIR[@]}"
+			do
+				/bin/mkdir /media/retropie/roms/$romdir &>/dev/null
+			done
+			umountfunc
+			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Creation of rom folder structure is complete\n\nPlug the USB drive into your PC\n\nYou will see retropie/roms and retropie/BIOS\n\ncopy your roms and bios files to these locations and then reinsert and choose option 2" 10 80
+			sleep 12
 			mainfunc
 			;;
 		2)
+			mountfunc
+			if [ ! -d "/media/retropie/roms" ] && [ ! -d "/media/retropie/BIOS" ]; then
+				umountfunc
+                                dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "ERROR: retropie/rom retropie/BIOS folders not fonund on USB drive\n\nRun option 1 first\n\n...Exiting" 10 80
+                                sleep 8
+                                mainfunc
+			fi
+			ARRROMSRC=(/media/retropie/roms/*/*)
+			ROMDST="/home/pi/RetroPie/roms/"
+			BIOSDST="/home/pi/RetroPie/BIOS/"
+			dialog --keep-tite --no-shadow --cr-wrap --title "Rom copy" --gauge "Copying rom files..." 15 80 < <(
+				nr=${#ARRROMSRC[*]};
+				ir=0
+				for fromsrc in "${ARRROMSRC[@]}"
+				do
+					fromdst=$(echo $fromsrc | sed s+media/retropie+home/pi/RetroPie+)
+					PCTROM=$(( 100*(++ir)/nr ))
+cat <<EOF
+XXX
+$PCTROM
+Copying rom \
+\n\nSRC: "$fromsrc" \
+\n\nDST: "$fromdst"
+XXX
+EOF
+					/bin/cp "$fromsrc" "$fromdst" &>/dev/null
+				done
+			)
+			/bin/chown -R pi.pi $ROMDST
+			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Rom copy complete.\n\n...Please wait" 5 40
+			sleep 4
+
+                        ARRBIOSSRC=(/media/retropie/BIOS/*)
+                        BIOSDST="/home/pi/RetroPie/BIOS/"
+                        dialog --keep-tite --no-shadow --cr-wrap --title "BIOS copy" --gauge "Copying BIOS files..." 15 80 < <(
+                                nb=${#ARRBIOSSRC[*]};
+                                ib=0
+
+                                for fbiossrc in "${ARRBIOSSRC[@]}"
+                                do
+                                        fbiosdst=$(echo $fbiossrc | sed s+media/retropie+home/pi/RetroPie+)
+                                        PCTBIOS=$(( 100*(++ib)/nb ))
+cat <<EOF
+XXX
+$PCTBIOS
+Copying bios \
+\n\nSRC: "$fbiossrc" \
+\n\nDST: "$fbiosdst"
+XXX
+EOF
+                                        /bin/cp -R "$fbiossrc" "$fbiosdst" &>/dev/null
+                                done
+                        )
+
+                        /bin/chown -R pi.pi $BIOSDST
+                        umountfunc
+                        dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "BIOS copy complete.\n\n...Please wait" 5 40
+                        sleep 4
+			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "It is recommended you reboot your device from the RomCopy menu\nfor the new roms to become available" 5 40
+			sleep 8
+			mainfunc
+			;;
+		3)
 			mountfunc
 			/bin/mkdir "$rcbkup" > /dev/null 2>&1
 			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backing up data to USB\n\n...Please wait" 10 80
 			echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
 			cd /home/pi/RetroPie/
 			/bin/tar cfz "$rcbkup"/roms.tar.gz ./roms
-			echo "33" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
+			echo "33" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/home/pi/RetroPie/BIOS\n\n...Please wait" 10 80 0
+			cd /home/pi/RetroPie/
+			/bin/tar cfz "$rcbkup"/bios.tar.gz ./BIOS
+                        echo "75" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
 			cd /opt/retropie/configs/all/emulationstation/
 			/bin/tar cfz "$rcbkup"/downloaded_images.tar.gz ./downloaded_images
-			echo "66" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
+			echo "99" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
 			cd /opt/retropie/configs/all/emulationstation/
 			/bin/tar cfz "$rcbkup"/gamelists.tar.gz ./gamelists
-			if [ -f "$rcbkup"/roms.tar.gz ] && [ -f "$rcbkup"/downloaded_images.tar.gz ] && [ -f "$rcbkup"/gamelists.tar.gz ]; then
+			if [ -f "$rcbkup"/roms.tar.gz ] && [ -f "$rcbkup"/downloaded_images.tar.gz ] && [ -f "$rcbkup"/gamelists.tar.gz ] && [ -f "$rcbkup"/bios.tar.gz ]; then
 				umountfunc
 	            		echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup roms to USB complete" 10 80 0
 				sleep 4
@@ -126,11 +182,11 @@ EOF
 				mainfunc
 			fi
 			;;
-		3)
+		4)
 			mountfunc
-			if [ -f "$rcbkup"/roms.tar.gz ] && [ -f "$rcbkup"/downloaded_images.tar.gz ] && [ -f "$rcbkup"/gamelists.tar.gz ]; then
-				rm -fr /home/pi/RetroPie/roms/*
+			if [ -f "$rcbkup"/roms.tar.gz ] && [ -f "$rcbkup"/downloaded_images.tar.gz ] && [ -f "$rcbkup"/gamelists.tar.gz ] && [ -f "$rcbkup"/bios.tar.gz ]; then
 				(pv -n "$rcbkup"/roms.tar.gz | tar xzf - -C /home/pi/RetroPie/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/home/pi/RetroPie/roms\n\n...Please wait" 10 80 0
+				(pv -n "$rcbkup"/bios.tar.gz | tar xzf - -C /home/pi/RetroPie/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/home/pi/RetroPie/BIOS\n\n...Please wait" 10 80 0
 				(pv -n "$rcbkup"/downloaded_images.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/downloaded)images\n\n...Please wait" 10 80 0
 				(pv -n "$rcbkup"/gamelists.tar.gz | tar xzf - -C /opt/retropie/configs/all/emulationstation/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/opt/retropie/configs/all/emulationstation/gamelists\n\n...Please wait" 10 80 0
 				umountfunc
@@ -144,48 +200,14 @@ EOF
 				mainfunc
 			fi
 			;;
-		4)
-			mountfunc
-			/bin/mkdir "$rcbkup" > /dev/null 2>&1
-			dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Backing up WiFi settings to USB\n\n...Please wait" 10 80
-			echo "0" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup in progress \n\n/etc/NetworkManager\n\n...Please wait" 10 80 0
-			cd /etc/
-			/usr/bin/sudo /bin/tar cfz "$rcbkup"/networkmanager.tar.gz ./NetworkManager
-			if [ -f "$rcbkup"/networkmanager.tar.gz ]; then
-				umountfunc
-				echo "100" | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Backup of WiFi to USB complete" 10 80 0
-				sleep 4
-				mainfunc
-			else
-				umountfunc
-				dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "ERROR: Backup WiFi data to USB failed" 10 80
-				sleep 4
-				mainfunc
-			fi
-			;;
-		5)
-			mountfunc
-			if [ -f "$rcbkup"/networkmanager.tar.gz ]; then
-				(pv -n "$rcbkup"/networkmanager.tar.gz | /usr/bin/sudo tar xzf - -C /etc/ ) 2>&1 | dialog --keep-tite --no-shadow --cr-wrap --keep-window --gauge "Restore in progress \n\n/etc/NetworkManager\n\n...Please wait" 10 80 0
-				/usr/bin/sudo /bin/cp /etc/rc.local /etc/rc.local.orig
-				/usr/bin/sudo sed -i '/exit 0/d' /etc/rc.local > /dev/null 2>&1
-				/usr/bin/sudo sed -i '/ifdown eth0/d' /etc/rc.local > /dev/null 2>&1
-				echo "ifdown eth0" | /usr/bin/sudo /usr/bin/tee -a /etc/rc.local > /dev/null
-				echo "exit 0" | /usr/bin/sudo /usr/bin/tee -a /etc/rc.local > /dev/null
-				umountfunc
-				dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Restore of WiFi data successful\n\nReboot to complete\n\n...Exiting" 10 80
-				sleep 4
-				mainfunc
-			else
-				umountfunc
-				dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "ERROR: Backup WiFi data does not exist on USB drive\n\n...Exiting" 10 80
-				sleep 4
-				mainfunc
-			fi
+                253)
+                        dialog --keep-tite --no-shadow --cr-wrap --keep-window --infobox "Option 1 will create a folder structure on your USB drive in properation for you to populate the folders with roms/bios files\n\nOnce it completes, remove the USB drive and insert it into your PC\n\nCopy the roms/bios you wish to play in the correct retropie/rom retropie/BIOS folders\n\nOnce copied, insert the USB drive back into the RetroStone and select option 2\n\nThis option will seamlessly copy roms and bios files to your internal storage\n\nOptions 3 and 4 will backup your internal roms with saves, coverart etc. and allow you to restore them later" 10 80
+			sleep 10
+			mainfunc
 			;;
 		254)
 			echo "...Rebooting"
-			/usr/bin/sudo /bin/reboot
+			/usr/bin/sudo /sbin/reboot
 			;;
 		255)
 			echo "...Exiting"
